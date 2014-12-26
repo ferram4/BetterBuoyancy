@@ -26,7 +26,7 @@ namespace BetterBuoyancy
                 moduleInitialized = true;
             }
 
-            part.rigidbody.AddForceAtPosition((Vector3)BuoyancyForce(part.rb), part.transform.position);
+            part.rigidbody.AddForceAtPosition((Vector3)BuoyancyForce(part.rb), part.transform.position, ForceMode.Force);
         }
 
         private Vector3d BuoyancyForce(Rigidbody body)
@@ -36,7 +36,7 @@ namespace BetterBuoyancy
 
             if (depth < 0)      //corresponds to above the ocean
             {
-                if(part.Splashed)
+                if (part.WaterContact)
                 {
                     part.WaterContact = false;
                     vessel.Splashed = false;
@@ -45,7 +45,7 @@ namespace BetterBuoyancy
                 return Vector3.zero;
             }
 
-            if(!part.Splashed)
+            if (!part.WaterContact)
             {
                 part.WaterContact = true;
                 vessel.Splashed = true;
@@ -91,7 +91,7 @@ namespace BetterBuoyancy
             Vector3d velVector = body.velocity + Krakensbane.GetFrameVelocityV3f();
 
             double vertVec = Vector3d.Dot(velVector, vessel.upAxis);
-            if (vertVec > part.crashTolerance * VERT_CRASH_TOL_FACTOR)
+            if (Math.Abs(vertVec) > part.crashTolerance * VERT_CRASH_TOL_FACTOR)
             {
                 GameEvents.onCrashSplashdown.Fire(new EventReport(FlightEvents.SPLASHDOWN_CRASH, part, part.partInfo.title, "", 0, ""));
                 part.Die();
