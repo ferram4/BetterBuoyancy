@@ -20,6 +20,8 @@ namespace BetterBuoyancy
 
             if (!moduleInitialized)
             {
+                if (part.partBuoyancy == null)
+                    return;
                 GameObject.Destroy(part.partBuoyancy);
                 moduleInitialized = true;
             }
@@ -30,13 +32,14 @@ namespace BetterBuoyancy
         private Vector3d BuoyancyForce(Rigidbody body)
         {
             //We assume the ocean is at 0 altitude
-            double depth = -vessel.altitude;
+            double depth = -FlightGlobals.getAltitudeAtPos((Vector3d)part.transform.position, vessel.mainBody);
             if (depth < 0)
             {
                 if(part.Splashed)
                 {
                     part.WaterContact = false;
                     vessel.Splashed = false;
+                    part.rigidbody.drag = 0;
                 }
                 return Vector3.zero;
             }
@@ -46,6 +49,7 @@ namespace BetterBuoyancy
                 ApplySplashEffect();
                 part.WaterContact = true;
                 vessel.Splashed = true;
+                part.rigidbody.drag = 3;
             }
             if (CheckDieOnHighVelocity(body))
                 return Vector3.zero;
@@ -73,7 +77,9 @@ namespace BetterBuoyancy
 
         private void ApplySplashEffect()
         {
-            FXMonger.Splash(part.transform.position, rigidbody.velocity.magnitude * 0.1f);
+            float mag = rigidbody.velocity.magnitude * 0.1f;
+            if(mag > 20)
+                FXMonger.Splash(part.transform.position, mag);
         }
 
         private bool CheckDieOnHighVelocity(Rigidbody body)
