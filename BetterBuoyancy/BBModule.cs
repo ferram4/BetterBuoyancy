@@ -74,7 +74,7 @@ namespace BetterBuoyancy
                 part.WaterContact = true;
                 vessel.Splashed = true;
             }
-            ApplySplashEffect();
+            ApplySplashEffect(depth, body);
 
             if (CheckDieOnHighVelocity(body))
                 return Vector3.zero;
@@ -103,9 +103,12 @@ namespace BetterBuoyancy
             return buoyancyForce;
         }
 
-        private void ApplySplashEffect()
+        private void ApplySplashEffect(double depth, Rigidbody body)
         {
-            float mag = rigidbody.velocity.magnitude * 0.1f;
+            if (depth > 1)
+                return;
+
+            float mag = body.velocity.magnitude * 0.1f;
             if(mag > 5)
                 FXMonger.Splash(part.transform.position, mag);
         }
