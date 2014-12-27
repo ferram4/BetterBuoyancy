@@ -35,7 +35,7 @@ namespace BetterBuoyancy
 
         const double VERT_CRASH_TOL_FACTOR = 1.2;
         const double HORIZ_CRASH_TOL_FACTOR = 7;
-        const double OCEAN_DENSITY_IN_TONNE_PER_METER_CUBED = 1;
+        //const double OCEAN_DENSITY_IN_TONNE_PER_METER_CUBED = 1;
 
         private void FixedUpdate()
         {
@@ -99,7 +99,7 @@ namespace BetterBuoyancy
             part.rigidbody.drag = 3 * (float)depthFactor;
 
             Vector3d buoyancyForce = -FlightGlobals.getGeeForceAtPosition(part.transform.position) * depthFactor;
-            buoyancyForce *= vol * OCEAN_DENSITY_IN_TONNE_PER_METER_CUBED;
+            buoyancyForce *= vol * BBPlanetOceanDensity.EvaluateBodyOceanDensity(vessel.mainBody);
             return buoyancyForce;
         }
 
