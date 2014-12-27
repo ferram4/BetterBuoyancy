@@ -47,6 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BBCrewEVAWatcher.cs" />
     <Compile Include="BBModule.cs" />
     <Compile Include="BBPlanetDensity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

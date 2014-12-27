@@ -33,9 +33,22 @@ namespace BetterBuoyancy
     {
         bool moduleInitialized = false;
 
-        const double VERT_CRASH_TOL_FACTOR = 1.2;
-        const double HORIZ_CRASH_TOL_FACTOR = 7;
-        //const double OCEAN_DENSITY_IN_TONNE_PER_METER_CUBED = 1;
+        double vertCrashTolFactor = 1.2;
+        double horizCrashTolFactor = 7;
+        double overrideVol = -1;
+        double overridedepthForMaxForce = -1;
+
+        public void SetOverrideParams(double volume, double fullImmersionDepth)
+        {
+            overrideVol = volume;
+            overridedepthForMaxForce = fullImmersionDepth;
+        }
+
+        public void SetCrashFactors(double vertCrashTolFactor, double horizCrashTolFactor)
+        {
+            this.vertCrashTolFactor = vertCrashTolFactor;
+            this.horizCrashTolFactor = horizCrashTolFactor;
+        }
 
         private void FixedUpdate()
         {
@@ -81,7 +94,12 @@ namespace BetterBuoyancy
 
             double vol;
             double depthForMaxForce;
-            if (part.collider)
+            if(overrideVol > 0)
+            {
+                vol = overrideVol;
+                depthForMaxForce = overridedepthForMaxForce;
+            }
+            else if (part.collider)
             {
                 Vector3 size = part.collider.bounds.size;
                 vol = size.magnitude;       //This is highly approximate, but it works
@@ -118,14 +136,14 @@ namespace BetterBuoyancy
             Vector3d velVector = body.velocity + Krakensbane.GetFrameVelocityV3f();
 
             double vertVec = Vector3d.Dot(velVector, vessel.upAxis);
-            if (Math.Abs(vertVec) > part.crashTolerance * VERT_CRASH_TOL_FACTOR)
+            if (Math.Abs(vertVec) > part.crashTolerance * vertCrashTolFactor)
             {
                 GameEvents.onCrashSplashdown.Fire(new EventReport(FlightEvents.SPLASHDOWN_CRASH, part, part.partInfo.title, "", 0, ""));
                 part.Die();
                 return true;
             }
             double horizVel = (velVector - vertVec * vessel.upAxis).magnitude;
-            if (horizVel > part.crashTolerance * HORIZ_CRASH_TOL_FACTOR)
+            if (horizVel > part.crashTolerance * horizCrashTolFactor)
             {
                 GameEvents.onCrashSplashdown.Fire(new EventReport(FlightEvents.SPLASHDOWN_CRASH, part, part.partInfo.title, "", 0, ""));
                 part.Die();
