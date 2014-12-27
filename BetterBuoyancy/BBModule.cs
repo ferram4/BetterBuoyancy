@@ -76,7 +76,7 @@ namespace BetterBuoyancy
                 if (part.WaterContact)
                 {
                     part.WaterContact = false;
-                    vessel.Splashed = false;
+                    vessel.checkSplashed();
                     part.rigidbody.drag = 0;
                 }
                 return Vector3.zero;
