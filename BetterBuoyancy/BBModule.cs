@@ -127,7 +127,7 @@ namespace BetterBuoyancy
                 return;
 
             float mag = body.velocity.magnitude * 0.1f;
-            if(mag > 5)
+            if(mag > 10)
                 FXMonger.Splash(part.transform.position, mag);
         }
 

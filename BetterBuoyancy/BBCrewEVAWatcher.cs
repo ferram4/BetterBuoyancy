@@ -35,6 +35,7 @@ namespace BetterBuoyancy
         void Start()
         {
             GameEvents.onVesselCreate.Add(HandleCrewEVA);
+            Debug.Log("Activating BetterBuoyancy EVA Watcher");
         }
 
         void HandleCrewEVA(Vessel v)
