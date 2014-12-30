@@ -40,6 +40,9 @@ namespace BetterBuoyancy
 
         void HandleCrewEVA(Vessel v)
         {
+            if (v == null || v.rootPart == null || v.rootPart.Modules == null)
+                return;
+
             if(v.rootPart.Modules.Contains("KerbalEVA"))
             {
                 BBModule evaBuoyancy = (BBModule)v.rootPart.AddModule("BBModule");
