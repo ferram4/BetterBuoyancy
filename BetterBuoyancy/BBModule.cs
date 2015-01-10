@@ -1,4 +1,4 @@
-﻿/*Copyright (c) 2014, Michael Ferrara
+﻿/*Copyright (c) 2015, Michael Ferrara
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -63,30 +63,48 @@ namespace BetterBuoyancy
                 moduleInitialized = true;
             }
 
-            part.rigidbody.AddForceAtPosition((Vector3)BuoyancyForce(part.rb), part.transform.position, ForceMode.Force);
+            double depth = CalculateDepth((Vector3d)part.transform.position);
+            UpdateWaterContact(depth);
+            if (depth >= 0)
+            {
+                ApplyBouyancyForce(BuoyancyForce(part.rb, depth));
+            }
         }
 
-        private Vector3d BuoyancyForce(Rigidbody body)
+        protected virtual void ApplyBouyancyForce(Vector3d buoyancyForce)
+        {
+            part.rigidbody.AddForceAtPosition((Vector3)buoyancyForce, part.transform.position, ForceMode.Force);
+        }
+
+        private double CalculateDepth(Vector3d position)
         {
             //We assume the ocean is at 0 altitude
-            double depth = -FlightGlobals.getAltitudeAtPos((Vector3d)part.transform.position, vessel.mainBody);
+            double depth = -FlightGlobals.getAltitudeAtPos(position, vessel.mainBody);
+            return depth;
+        }
 
+        private void UpdateWaterContact(double depth)
+        {
             if (depth < 0)      //corresponds to above the ocean
             {
                 if (part.WaterContact)
                 {
                     part.WaterContact = false;
-                    vessel.checkSplashed();
                     part.rigidbody.drag = 0;
+                    vessel.checkSplashed();
                 }
-                return Vector3.zero;
+                return;
             }
 
             if (!part.WaterContact)
             {
                 part.WaterContact = true;
-                vessel.Splashed = true;
+                vessel.checkSplashed();
             }
+        }
+
+        private Vector3d BuoyancyForce(Rigidbody body, double depth)
+        {
             ApplySplashEffect(depth, body);
 
             if (CheckDieOnHighVelocity(body))

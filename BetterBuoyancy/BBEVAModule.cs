@@ -24,36 +24,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 using System;
 using System.Collections.Generic;
-using UnityEngine;
-using KSP;
+using System.Linq;
+using System.Text;
 
 namespace BetterBuoyancy
 {
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class BBCrewEVAWatcher : MonoBehaviour
+    class BBEVAModule : BBModule
     {
-        void Start()
+        private KerbalEVA evaModule;
+
+        private void Start()
         {
-            GameEvents.onVesselCreate.Add(HandleCrewEVA);
-            Debug.Log("Activating BetterBuoyancy EVA Watcher");
+            evaModule = this.part.GetComponent<KerbalEVA>();
         }
 
-        void HandleCrewEVA(Vessel v)
+        protected override void ApplyBouyancyForce(Vector3d buoyancyForce)
         {
-            if (v == null || v.rootPart == null || v.rootPart.Modules == null)
-                return;
-
-            if(v.rootPart.Modules.Contains("KerbalEVA"))
+            if (evaModule.isRagdoll)
             {
-                BBEVAModule evaBuoyancy = (BBEVAModule)v.rootPart.AddModule("BBEVAModule");
-                evaBuoyancy.SetCrashFactors(1.2, 1.2);
-                evaBuoyancy.SetOverrideParams(0.0664, 1);   //average volume of a human body
-            }
-        }
+                buoyancyForce /= (part.mass);
+                
 
-        void OnDestroy()
-        {
-            GameEvents.onVesselCreate.Remove(HandleCrewEVA);
+                for (int i = 0; i < evaModule.ragdollNodes.Length; i++)
+                    evaModule.ragdollNodes[i].rb.AddForce(buoyancyForce, UnityEngine.ForceMode.Acceleration);
+            }
+            else
+                base.ApplyBouyancyForce(buoyancyForce);
         }
     }
 }
