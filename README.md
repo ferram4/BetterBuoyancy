@@ -1,4 +1,4 @@
-Better Buoyancy, v1.0
+Better Buoyancy, v1.1
 =========================
 
 A KSP mod that uses double precision measurements for buoyancy calculations and allows for high-speed horizontal ditching.
@@ -7,3 +7,13 @@ Density can also be configured per-CelestialBody by using the config file to set
 The default density value can also be set.
 
 Source: https://github.com/ferram4/BetterBuoyancy
+
+Changelog:  
+
+v1.1  
+Added null checking on vessel spawning watcher  
+Fixed ragdoll EVA sinking  
+Upgrade to MM 2.5.9
+
+v1.0  
+Initial release
