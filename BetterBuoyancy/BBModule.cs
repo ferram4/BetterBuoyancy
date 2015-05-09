@@ -134,8 +134,14 @@ namespace BetterBuoyancy
 
             part.rigidbody.drag = 3 * (float)depthFactor;
 
-            Vector3d buoyancyForce = -FlightGlobals.getGeeForceAtPosition(part.transform.position) * depthFactor;
+            Vector3d gForce = -FlightGlobals.getGeeForceAtPosition(part.transform.position);
+
+            Vector3d buoyancyForce = gForce * depthFactor;
             buoyancyForce *= vol * BBPlanetOceanDensity.EvaluateBodyOceanDensity(vessel.mainBody);
+
+            if(buoyancyForce.sqrMagnitude > part.mass * gForce.sqrMagnitude * 1.5)
+                buoyancyForce =  part.mass * gForce * 1.5;
+
             return buoyancyForce;
         }
 

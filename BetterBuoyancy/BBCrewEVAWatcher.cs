@@ -47,7 +47,7 @@ namespace BetterBuoyancy
             {
                 BBEVAModule evaBuoyancy = (BBEVAModule)v.rootPart.AddModule("BBEVAModule");
                 evaBuoyancy.SetCrashFactors(1.2, 1.2);
-                evaBuoyancy.SetOverrideParams(0.0664, 1);   //average volume of a human body
+                evaBuoyancy.SetOverrideParams(0.1328, 1);   //average volume of a human body * 2 to deal with density
             }
         }
 
