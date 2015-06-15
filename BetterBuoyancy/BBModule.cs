@@ -120,7 +120,7 @@ namespace BetterBuoyancy
             else if (part.collider)
             {
                 Vector3 size = part.collider.bounds.size;
-                vol = size.magnitude;       //This is highly approximate, but it works
+                vol = size.x * size.y * size.z;       //This is highly approximate, but it works
                 depthForMaxForce = Math.Max(Math.Max(size.x, Math.Max(size.y, size.z)), 2);      //This is a very, very rough model of partial immersion
             }
             else
@@ -133,14 +133,12 @@ namespace BetterBuoyancy
             depthFactor = Math.Min(depthFactor, 1);
 
             part.rigidbody.drag = 3 * (float)depthFactor;
+            part.rigidbody.angularDrag = part.rigidbody.drag;
 
             Vector3d gForce = -FlightGlobals.getGeeForceAtPosition(part.transform.position);
 
             Vector3d buoyancyForce = gForce * depthFactor;
             buoyancyForce *= vol * BBPlanetOceanDensity.EvaluateBodyOceanDensity(vessel.mainBody);
-
-            if(buoyancyForce.sqrMagnitude > part.mass * gForce.sqrMagnitude * 1.5)
-                buoyancyForce =  part.mass * gForce * 1.5;
 
             return buoyancyForce;
         }
