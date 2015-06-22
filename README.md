@@ -1,4 +1,4 @@
-Better Buoyancy, v1.2
+Better Buoyancy, v1.3
 =========================
 
 A KSP mod that uses double precision measurements for buoyancy calculations and allows for high-speed horizontal ditching.
@@ -9,6 +9,11 @@ The default density value can also be set.
 Source: https://github.com/ferram4/BetterBuoyancy
 
 Changelog:  
+
+v1.3
+Update for KSP 1.0.3  
+Upgrade to MM 2.6.5
+Fix some situations where things that should float did not due to incorrect volume calculation  
 
 v1.2
 Update for KSP 1.0, 1.0.1, 1.0.2
