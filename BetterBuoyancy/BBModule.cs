@@ -132,7 +132,7 @@ namespace BetterBuoyancy
             double depthFactor = depth / depthForMaxForce;
             depthFactor = Math.Min(depthFactor, 1);
 
-            part.rigidbody.drag = 3 * (float)depthFactor;
+            part.rigidbody.drag = 3;// *(float)depthFactor;
             part.rigidbody.angularDrag = part.rigidbody.drag;
 
             Vector3d gForce = -FlightGlobals.getGeeForceAtPosition(part.transform.position);
