@@ -40,16 +40,15 @@ namespace BetterBuoyancy
 
         protected override void ApplyBouyancyForce(Vector3d buoyancyForce)
         {
+            buoyancyForce /= (part.mass);
             if (evaModule.isRagdoll)
             {
-                buoyancyForce /= (part.mass);
                 
 
                 for (int i = 0; i < evaModule.ragdollNodes.Length; i++)
                     evaModule.ragdollNodes[i].rb.AddForce(buoyancyForce, UnityEngine.ForceMode.Acceleration);
             }
-            else
-                base.ApplyBouyancyForce(buoyancyForce);
+            base.ApplyBouyancyForce(buoyancyForce * part.mass);
         }
     }
 }

@@ -33,10 +33,16 @@ namespace BetterBuoyancy
     {
         bool moduleInitialized = false;
 
+        static System.Random rand = new System.Random();
+
         double vertCrashTolFactor = 1.2;
         double horizCrashTolFactor = 7;
         double overrideVol = -1;
         double overridedepthForMaxForce = -1;
+        double depth = 0;
+
+        float splashDrag = 0;
+        int splashFrameDelay = 0;
 
         public void SetOverrideParams(double volume, double fullImmersionDepth)
         {
@@ -52,7 +58,7 @@ namespace BetterBuoyancy
 
         private void FixedUpdate()
         {
-            if (!FlightGlobals.ready || !vessel.mainBody.ocean || part.PhysicsSignificance == (int)Part.PhysicalSignificance.NONE || part.rigidbody == null)
+            if (!FlightGlobals.ready || !vessel.mainBody.ocean || part.PhysicsSignificance == (int)Part.PhysicalSignificance.NONE || part.rb == null)
                 return;
 
             if (!moduleInitialized)
@@ -63,12 +69,27 @@ namespace BetterBuoyancy
                 moduleInitialized = true;
             }
 
-            double depth = CalculateDepth((Vector3d)part.transform.position);
+            depth = CalculateDepth((Vector3d)part.transform.position);
             UpdateWaterContact(depth);
             if (depth >= 0)
             {
                 ApplyBouyancyForce(BuoyancyForce(part.rb, depth));
             }
+        }
+
+        private void Update()
+        {
+            if (splashFrameDelay <= 0)
+            {
+                if (depth >= 0)
+                {
+                    ApplySplashEffect(depth, part.rb);
+                    splashFrameDelay = rand.Next(1, 5);
+                }
+            }
+            else
+                --splashFrameDelay;
+            
         }
 
         protected virtual void ApplyBouyancyForce(Vector3d buoyancyForce)
@@ -90,22 +111,39 @@ namespace BetterBuoyancy
                 if (part.WaterContact)
                 {
                     part.WaterContact = false;
-                    part.rigidbody.drag = 0;
+                    splashDrag = 0;
+                    part.rb.drag = 0;
+                    part.rb.angularDrag = 0;
                     vessel.checkSplashed();
                 }
                 return;
             }
 
+            float tmp = 0.25f / part.Rigidbody.mass;
+
+            if (splashDrag > tmp)
+                splashDrag = splashDrag * 0.90f;
+            else
+                splashDrag = tmp;
+
             if (!part.WaterContact)
             {
                 part.WaterContact = true;
                 vessel.checkSplashed();
+
+                float vertVec = Vector3.Dot(part.rb.velocity + Krakensbane.GetFrameVelocityV3f(), vessel.upAxis);
+                vertVec *= 0.04f;
+                if (vertVec > 1)
+                    vertVec = 1;
+
+                splashDrag = 10f * vertVec / part.rb.mass;
             }
+            part.rb.drag = part.rb.angularDrag = splashDrag;
+
         }
 
         private Vector3d BuoyancyForce(Rigidbody body, double depth)
         {
-            ApplySplashEffect(depth, body);
 
             if (CheckDieOnHighVelocity(body))
                 return Vector3.zero;
@@ -132,9 +170,6 @@ namespace BetterBuoyancy
             double depthFactor = depth / depthForMaxForce;
             depthFactor = Math.Min(depthFactor, 1);
 
-            part.rigidbody.drag = 3;// *(float)depthFactor;
-            part.rigidbody.angularDrag = part.rigidbody.drag;
-
             Vector3d gForce = -FlightGlobals.getGeeForceAtPosition(part.transform.position);
 
             Vector3d buoyancyForce = gForce * depthFactor;
@@ -148,8 +183,8 @@ namespace BetterBuoyancy
             if (depth > 1)
                 return;
 
-            float mag = body.velocity.magnitude * 0.1f;
-            if(mag > 10)
+            float mag = body.velocity.magnitude * 0.02f;
+            if(mag > 0.05)
                 FXMonger.Splash(part.transform.position, mag);
         }
 
@@ -161,6 +196,7 @@ namespace BetterBuoyancy
             if (Math.Abs(vertVec) > part.crashTolerance * vertCrashTolFactor)
             {
                 GameEvents.onCrashSplashdown.Fire(new EventReport(FlightEvents.SPLASHDOWN_CRASH, part, part.partInfo.title, "", 0, ""));
+                FXMonger.Splash(part.transform.position, 10);
                 part.Die();
                 return true;
             }
@@ -168,6 +204,7 @@ namespace BetterBuoyancy
             if (horizVel > part.crashTolerance * horizCrashTolFactor)
             {
                 GameEvents.onCrashSplashdown.Fire(new EventReport(FlightEvents.SPLASHDOWN_CRASH, part, part.partInfo.title, "", 0, ""));
+                FXMonger.Splash(part.transform.position, 10);
                 part.Die();
                 return true;
             }
