@@ -39,7 +39,10 @@ namespace BetterBuoyancy
         double horizCrashTolFactor = 7;
         double overrideVol = -1;
         double overridedepthForMaxForce = -1;
-        double depth = 0;
+        double depth = -1;
+
+        double volume = 1;
+        double depthFactor = 0;
 
         float splashDrag = 0;
         int splashFrameDelay = 0;
@@ -70,10 +73,11 @@ namespace BetterBuoyancy
             }
 
             depth = CalculateDepth((Vector3d)part.transform.position);
+            CalcDepthFactor(depth);
             UpdateWaterContact(depth);
             if (depth >= 0)
             {
-                ApplyBouyancyForce(BuoyancyForce(part.rb, depth));
+                ApplyBouyancyForce(BuoyancyForce(part.rb, depth)+ BuoyantDragForce(part.rb, depthFactor));
             }
         }
 
@@ -83,7 +87,7 @@ namespace BetterBuoyancy
             {
                 if (depth >= 0)
                 {
-                    ApplySplashEffect(depth, part.rb);
+                    ApplySplashEffect(depth, part.Rigidbody);
                     splashFrameDelay = rand.Next(1, 5);
                 }
             }
@@ -111,18 +115,22 @@ namespace BetterBuoyancy
                 if (part.WaterContact)
                 {
                     part.WaterContact = false;
+                    vessel.checkSplashed();
+                }
+                if(depthFactor < -1)
+                {
                     splashDrag = 0;
                     part.rb.drag = 0;
                     part.rb.angularDrag = 0;
-                    vessel.checkSplashed();
                 }
                 return;
             }
 
-            float tmp = 0.25f / part.Rigidbody.mass;
+            float tmp = 0.15f;      //base drag
 
+            tmp /= part.Rigidbody.mass;
             if (splashDrag > tmp)
-                splashDrag = splashDrag * 0.90f;
+                splashDrag = splashDrag * 0.98f;
             else
                 splashDrag = tmp;
 
@@ -132,14 +140,14 @@ namespace BetterBuoyancy
                 vessel.checkSplashed();
 
                 float vertVec = Vector3.Dot(part.rb.velocity + Krakensbane.GetFrameVelocityV3f(), vessel.upAxis);
-                vertVec *= 0.04f;
+                vertVec *= 0.1f;
                 if (vertVec > 1)
                     vertVec = 1;
 
-                splashDrag = 10f * vertVec / part.rb.mass;
+                splashDrag = Math.Max(20f * vertVec / part.rb.mass, tmp);
             }
-            part.rb.drag = part.rb.angularDrag = splashDrag;
-
+            part.rb.drag = splashDrag;
+            part.rb.angularDrag = splashDrag * 10;
         }
 
         private Vector3d BuoyancyForce(Rigidbody body, double depth)
@@ -148,34 +156,58 @@ namespace BetterBuoyancy
             if (CheckDieOnHighVelocity(body))
                 return Vector3.zero;
 
-            double vol;
-            double depthForMaxForce;
-            if(overrideVol > 0)
-            {
-                vol = overrideVol;
-                depthForMaxForce = overridedepthForMaxForce;
-            }
-            else if (part.collider)
-            {
-                Vector3 size = part.collider.bounds.size;
-                vol = size.x * size.y * size.z;       //This is highly approximate, but it works
-                depthForMaxForce = Math.Max(Math.Max(size.x, Math.Max(size.y, size.z)), 2);      //This is a very, very rough model of partial immersion
-            }
-            else
-            {
-                vol = 1;
-                depthForMaxForce = 2;
-            }
 
-            double depthFactor = depth / depthForMaxForce;
-            depthFactor = Math.Min(depthFactor, 1);
 
             Vector3d gForce = -FlightGlobals.getGeeForceAtPosition(part.transform.position);
 
             Vector3d buoyancyForce = gForce * depthFactor;
-            buoyancyForce *= vol * BBPlanetOceanDensity.EvaluateBodyOceanDensity(vessel.mainBody);
+            buoyancyForce *= volume * BBPlanetOceanDensity.EvaluateBodyOceanDensity(vessel.mainBody);
 
             return buoyancyForce;
+        }
+
+        private Vector3d BuoyantDragForce(Rigidbody body, double depthFactor)
+        {
+            float tmp = 0;
+            if (depthFactor < 0.5)
+                tmp += (float)depthFactor * 2f;     //drag from depth     
+            else
+                tmp += (float)(1f - depthFactor) * 2f;
+
+
+            Vector3d dragForce = Vector3.Project(body.velocity, vessel.upAxis);
+            double vertVel = dragForce.magnitude;
+            dragForce *= vertVel;
+            dragForce *= tmp * BBPlanetOceanDensity.EvaluateBodyOceanDensity(vessel.mainBody);
+
+            if (dragForce.magnitude * TimeWarp.fixedDeltaTime / body.mass > vertVel)
+                dragForce = vessel.upAxis * vertVel;
+
+            return -dragForce;
+        }
+
+        private void CalcDepthFactor(double depth)
+        {
+            if (overrideVol > 0)
+            {
+                volume = overrideVol;
+                depthFactor = overridedepthForMaxForce;
+            }
+            else if (part.collider)
+            {
+                Vector3 size = part.collider.bounds.size;
+                volume = size.x * size.y * size.z;       //This is highly approximate, but it works
+                depthFactor = Math.Max(Math.Max(size.x, Math.Max(size.y, size.z)), 2);      //This is a very, very rough model of partial immersion
+            }
+            else
+            {
+                volume = 1;
+                depthFactor = 2;
+            }
+
+            depthFactor = depth / depthFactor;
+
+            depthFactor = Math.Min(depthFactor, 1);
         }
 
         private void ApplySplashEffect(double depth, Rigidbody body)
